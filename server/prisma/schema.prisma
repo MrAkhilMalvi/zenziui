@@ -1,0 +1,146 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  username  String   @unique
+  password  String?  // Optional for OAuth users
+  firstName String?
+  lastName  String?
+  avatar    String?
+  bio       String?
+  website   String?
+  github    String?
+  twitter   String?
+  isVerified Boolean @default(false)
+  role      String   @default("USER") // USER, MODERATOR, ADMIN
+
+  // OAuth fields
+  googleId  String?  @unique
+  githubId  String?  @unique
+  provider  String?  // "email", "google", "github"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  components    Component[]
+  likes         ComponentLike[]
+  collections   Collection[]
+  uploads       Upload[]
+  comments      Comment[]
+
+  @@map("users")
+}
+
+model Component {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  code        String
+  preview     String?     // Base64 or URL to preview image
+  category    String
+  tags        String      // JSON string array of tags
+  complexity  String      @default("SIMPLE") // SIMPLE, INTERMEDIATE, ADVANCED, EXPERT
+  isPublic    Boolean     @default(true)
+  isFeatured  Boolean     @default(false)
+  downloads   Int         @default(0)
+  views       Int         @default(0)
+  framework   String      @default("REACT") // REACT, VUE, ANGULAR, SVELTE, VANILLA
+  version     String      @default("1.0.0")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  author        User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId      String
+  likes         ComponentLike[]
+  collections   ComponentCollection[]
+  comments      Comment[]
+
+  @@unique([authorId, name])
+  @@map("components")
+}
+
+model ComponentLike {
+  id          String    @id @default(cuid())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  componentId String
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, componentId])
+  @@map("component_likes")
+}
+
+model Collection {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  isPublic    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  author      User                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  components  ComponentCollection[]
+
+  @@unique([authorId, name])
+  @@map("collections")
+}
+
+model ComponentCollection {
+  id           String     @id @default(cuid())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  component    Component  @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  componentId  String
+  addedAt      DateTime   @default(now())
+
+  @@unique([collectionId, componentId])
+  @@map("component_collections")
+}
+
+model Upload {
+  id        String     @id @default(cuid())
+  filename  String
+  originalName String
+  mimetype  String
+  size      Int
+  url       String
+  type      String     @default("IMAGE") // IMAGE, VIDEO, DOCUMENT
+  createdAt DateTime   @default(now())
+
+  // Relations
+  author    User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId  String
+
+  @@map("uploads")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  componentId String
+
+  @@map("comments")
+}
