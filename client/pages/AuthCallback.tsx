@@ -9,33 +9,29 @@ export default function AuthCallback() {
   const { setToken } = useAuth();
   
   useEffect(() => {
-    const token = searchParams.get('token');
-    // const provider = searchParams.get('provider');
-    const error = searchParams.get('error');
+  const token = searchParams.get("token");
+  const error = searchParams.get("error");
 
+  async function handleAuth() {
     if (error) {
-      // Handle OAuth error
-      console.error('OAuth error:', error);
-      navigate('/login?error=oauth_failed');
+      navigate("/login?error=oauth_failed");
+      return;
+    }
+    if (!token) {
+      navigate("/login?error=no_token");
       return;
     }
 
-    if (token) {
-      // Store the token and redirect to dashboard
-      localStorage.setItem('token', token);
-      
-      // Update auth context if setToken method exists
-      if (setToken) {
-        setToken(token);
-      }
-      
-      // Redirect to explore page
-      navigate('/explore');
-    } else {
-      // No token received, redirect to login
-      navigate('/login?error=no_token');
-    }
-  }, [searchParams, navigate, setToken]);
+    // Wait for setToken to finish fetching user profile
+    await setToken(token);
+
+    // Redirect only after user is loaded
+    navigate("/explore");
+  }
+
+  handleAuth();
+}, [searchParams, navigate, setToken]);
+
 
   return (
     <div className="min-h-screen flex items-center justify-center">

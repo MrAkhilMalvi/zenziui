@@ -124,37 +124,36 @@ class ApiClient {
     this.token = localStorage.getItem("token");
   }
 
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {},
-  ): Promise<T> {
-    const url = `${this.baseURL}${endpoint}`;
+ private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${this.baseURL}${endpoint}`;
+  
+  const isFormData = options.body instanceof FormData;
 
-    const config: RequestInit = {
-      headers: {
-        "Content-Type": "application/json",
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options.headers,
-      },
-      ...options,
-    };
+  const headers: HeadersInit = {
+    ...(this.token && { Authorization: `Bearer ${this.token}` }),
+    ...(isFormData ? {} : { "Content-Type": "application/json" }), // only set for JSON
+    ...options.headers,
+  };
 
-    try {
-      const response = await fetch(url, config);
-      console.log(response);
-      const data = await response.json();
+  const config: RequestInit = {
+    ...options,
+    headers,
+  };
 
-      if (!response.ok) {
-        throw new Error(data.message || data.error || "API request failed");
-      }
-console.log(data);
-      return data;
-      
-    } catch (error) {
-      console.error("API request failed:", error);
-      throw error;
+  try {
+    const response = await fetch(url, config);
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || data.error || "API request failed");
     }
+    return data;
+  } catch (error) {
+    console.error("API request failed:", error);
+    throw error;
   }
+}
+
 
   // Auth methods
   setToken(token: string) {
@@ -227,12 +226,27 @@ console.log(data);
     website?: string;
     github?: string;
     twitter?: string;
+    avatar?:string;
   }) {
     return this.request<{ user: User; message: string }>("/auth/profile", {
       method: "POST",
       body: JSON.stringify(userData),
     });
   }
+
+  async uploadAvatar(file: File) {
+  const formData = new FormData();
+  formData.append("avatar", file);
+
+  return this.request<{ avatarUrl: string; message: string; user: User;  }>(
+    "/uploads/avatar",
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+}
+
 
   // Component methods
   async getComponents(
@@ -516,6 +530,7 @@ export const collections = {
 export const uploads = {
   single: apiClient.uploadFile.bind(apiClient),
   multiple: apiClient.uploadFiles.bind(apiClient),
+  avatar: apiClient.uploadAvatar.bind(apiClient), 
   getAll: apiClient.getUploads.bind(apiClient),
   delete: apiClient.deleteUpload.bind(apiClient),
 };

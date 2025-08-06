@@ -69,6 +69,7 @@ export default function Gallery() {
       if (selectedFramework !== 'All') params.framework = selectedFramework;
 
       const response = await componentsAPI.getAll(params);
+      console.log("Loaded components:", response);
       console.log(response);
       setComponents(response.components || []);
       if (response.pagination) {

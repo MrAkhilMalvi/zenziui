@@ -11,6 +11,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (userData: {
     email: string;
@@ -157,6 +158,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     updateProfile,
     refreshUser,
     setToken,
+    setUser, // Expose setUser for direct updates
+  
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

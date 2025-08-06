@@ -2,6 +2,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const GitHubStrategy = require('passport-github2').Strategy;
 const { PrismaClient } = require('@prisma/client');
+const crypto = require('crypto');
 
 const prisma = new PrismaClient();
 
@@ -89,6 +90,8 @@ passport.use(new GoogleStrategy({
         googleId: profile.id,
         provider: 'google',
         isVerified: true,
+        role: 'user', // Default role
+        password: crypto.randomBytes(16).toString('hex')
       }
     });
 
@@ -158,6 +161,8 @@ passport.use(new GitHubStrategy({
         github: profile.profileUrl,
         provider: 'github',
         isVerified: true,
+        role: 'user', // Default role
+        password: crypto.randomBytes(16).toString('hex')
       }
     });
 
