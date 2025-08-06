@@ -8,34 +8,30 @@ const router = express.Router();
 
 // Validation schemas
 const createComponentSchema = z.object({
-  name: z.string().min(1, "Component name is required").max(100),
-  description: z.string().max(500).optional(),
+  name: z
+    .string()
+    .min(1, "Component name is required")
+    .max(100, "Name too long"),
+  description: z.string().max(500, "Description too long").optional(),
   code: z.string().min(1, "Component code is required"),
   preview: z.string().optional(),
   category: z.string().min(1, "Category is required"),
-  tags: z.array(z.string()).default([]),
-  complexity: z.enum(["SIMPLE", "INTERMEDIATE", "ADVANCED", "EXPERT"]).default("SIMPLE"),
+  tags: z
+    .array(z.string())
+    .default([])
+    .transform((arr) => JSON.stringify(arr)),
+  complexity:  z.string().default("SIMPLE"),
+
   isPublic: z.boolean().default(true),
-  framework: z.enum(["REACT", "VUE", "ANGULAR", "SVELTE", "VANILLA"]).default("REACT"),
+  framework: z
+    .enum(["REACT", "VUE", "ANGULAR", "SVELTE", "VANILLA"])
+    .default("REACT"),
   version: z.string().default("1.0.0"),
 });
+
 const updateComponentSchema = createComponentSchema.partial();
 
-const complexityMap = {
-  SIMPLE: "Simple",
-  INTERMEDIATE: "Intermediate",
-  ADVANCED: "Advanced",
-  EXPERT: "Expert",
-};
-const frameworkMap = {
-  REACT: "React",
-  VUE: "Vue",
-  ANGULAR: "Angular",
-  SVELTE: "Svelte",
-  VANILLA: "Vanilla",
-};
-
-// ---------------- GET ALL COMPONENTS ----------------
+// Get all public components with filtering and pagination
 router.get("/", optionalAuth, async (req, res) => {
   try {
     const {
@@ -54,207 +50,448 @@ router.get("/", optionalAuth, async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = { isPublic: true };
-    if (category) where.category = category;
-    if (complexity) where.complexity = complexity.toUpperCase();
-    if (framework) where.framework = framework.toUpperCase();
+    // Build where clause
+    const where = {
+      isPublic: true,
+    };
+
+    if (category) {
+      where.category = category;
+    }
 
     if (tags) {
       const tagArray = Array.isArray(tags) ? tags : [tags];
-      where.OR = tagArray.map((tag) => ({
-        tags: { contains: `"${tag}"` },
-      }));
+      // For SQLite, we need to use JSON contains with LIKE for tag search
+      where.OR = where.OR || [];
+      tagArray.forEach((tag) => {
+        where.OR.push({
+          tags: {
+            contains: `"${tag}"`,
+          },
+        });
+      });
+    }
+
+  if (complexity) {
+  where.complexity = complexity.toUpperCase();
+}
+
+
+    if (framework) {
+      where.framework = framework;
     }
 
     if (search) {
       const searchOR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
+        { name: { contains: search } },
+        { description: { contains: search } },
         { tags: { contains: `"${search}"` } },
       ];
-      where.OR = where.OR ? [...where.OR, ...searchOR] : searchOR;
+
+      if (where.OR) {
+        // Combine with existing OR conditions (from tags)
+        where.OR = [...where.OR, ...searchOR];
+      } else {
+        where.OR = searchOR;
+      }
     }
 
-    let orderBy =
-      sortBy === "popularity"
-        ? { likes: { _count: sortOrder } }
-        : { [sortBy]: sortOrder };
+let orderBy;
+if (sortBy === "likes") {
+  orderBy: {
+  likes: {
+    _count: 'desc'
+  }
+}
 
-        const include = {
-  author: {
-    select: { id: true, username: true, avatar: true, isVerified: true },
-  },
-  _count: { select: { likes: true, comments: true } },
-};
-
-if (req.user) {
-  include.likes = {
-    where: { userId: req.user.id },
-    select: { id: true },
+} else if (sortBy === "downloads") {
+  orderBy = {
+    downloads: sortOrder,
+  };
+} else if (sortBy === "views") {
+  orderBy = {
+    views: sortOrder,
+  };
+} else {
+  orderBy = {
+    [sortBy]: sortOrder,
   };
 }
 
- const [components, total] = await Promise.all([
-  prisma.component.findMany({
-    where,
-    skip,
-    take: limitNum,
-    orderBy,
-    include,
-  }),
-  prisma.component.count({ where }),
-]);
 
-    const componentsWithLabels = components.map((c) => ({
-      ...c,
-      complexityLabel: complexityMap[c.complexity] || c.complexity,
-      frameworkLabel: frameworkMap[c.framework] || c.framework,
-      tags: Array.isArray(c.tags) ? c.tags : JSON.parse(c.tags || "[]"),
-      isLiked: req.user ? c.likes?.length > 0 : false,
-      likes: undefined,
+
+    const [components, total] = await Promise.all([
+      prisma.component.findMany({
+        where,
+        orderBy,
+        skip,
+        take: limitNum,
+        include: {
+          author: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+              isVerified: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
+          ...(req.user && {
+            likes: {
+              where: { userId: req.user.id },
+              select: { id: true },
+            },
+          }),
+        },
+      }),
+      prisma.component.count({ where }),
+    ]);
+
+    // Add isLiked field for authenticated users and parse tags
+    const componentsWithLikes = components.map((component) => ({
+      ...component,
+      tags: JSON.parse(component.tags || "[]"),
+      isLiked: req.user ? component.likes?.length > 0 : false,
+      likes: undefined, // Remove the likes array, keep only the count
     }));
 
     res.json({
-      components: componentsWithLabels,
-      pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+      components: componentsWithLikes,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     console.error("Get components error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to fetch components",
+    });
   }
 });
 
-// ---------------- GET COMPONENT BY ID ----------------
+// Get component by ID
 router.get("/:id", optionalAuth, async (req, res) => {
   try {
     const { id } = req.params;
+
     const component = await prisma.component.findUnique({
       where: { id },
       include: {
-        author: { select: { id: true, username: true, avatar: true, isVerified: true } },
-        _count: { select: { likes: true, comments: true } },
+        author: {
+          select: {
+            id: true,
+            username: true,
+            firstName: true,
+            lastName: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
         comments: {
-          include: { author: { select: { id: true, username: true, avatar: true } } },
+          include: {
+            author: {
+              select: {
+                id: true,
+                username: true,
+                avatar: true,
+              },
+            },
+          },
           orderBy: { createdAt: "desc" },
         },
         ...(req.user && {
-          likes: { where: { userId: req.user.id }, select: { id: true } },
+          likes: {
+            where: { userId: req.user.id },
+            select: { id: true },
+          },
         }),
       },
     });
 
-    if (!component) return res.status(404).json({ error: "Component not found" });
-    if (!component.isPublic && (!req.user || req.user.id !== component.authorId))
-      return res.status(403).json({ error: "Access denied" });
+    if (!component) {
+      return res.status(404).json({
+        error: "Component not found",
+        message: "The requested component does not exist",
+      });
+    }
 
-    await prisma.component.update({ where: { id }, data: { views: { increment: 1 } } });
+    // Check if user can view this component
+    if (
+      !component.isPublic &&
+      (!req.user || req.user.id !== component.authorId)
+    ) {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "This component is private",
+      });
+    }
 
-    res.json({
-      component: {
-        ...component,
-        complexityLabel: complexityMap[component.complexity] || component.complexity,
-        frameworkLabel: frameworkMap[component.framework] || component.framework,
-        tags: JSON.parse(component.tags || "[]"),
-        isLiked: req.user ? component.likes?.length > 0 : false,
-        likes: undefined,
-      },
+    // Increment view count
+    await prisma.component.update({
+      where: { id },
+      data: { views: { increment: 1 } },
     });
+
+    const componentWithLike = {
+      ...component,
+      tags: JSON.parse(component.tags || "[]"),
+      isLiked: req.user ? component.likes?.length > 0 : false,
+      likes: undefined,
+    };
+
+    res.json({ component: componentWithLike });
   } catch (error) {
     console.error("Get component error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to fetch component",
+    });
   }
 });
 
-// ---------------- CREATE COMPONENT ----------------
+// Create new component
 router.post("/", authenticateToken, async (req, res) => {
   try {
     const validatedData = createComponentSchema.parse(req.body);
+
     const component = await prisma.component.create({
-      data: { ...validatedData, tags: validatedData.tags ?? [], authorId: req.user.id },
+      data: {
+        ...validatedData,
+        authorId: req.user.id,
+      },
       include: {
-        author: { select: { id: true, username: true, avatar: true, isVerified: true } },
-        _count: { select: { likes: true, comments: true } },
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
     });
-    res.status(201).json({ message: "Component created", component });
+
+    res.status(201).json({
+      message: "Component created successfully",
+      component: {
+        ...component,
+        tags: JSON.parse(component.tags || "[]"),
+      },
+    });
   } catch (error) {
     console.error("Create component error:", error);
-    if (error instanceof z.ZodError)
-      return res.status(400).json({ error: "Validation error", details: error.errors });
-    res.status(500).json({ error: "Internal server error" });
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: "Validation error",
+        message: error.errors[0].message,
+        details: error.errors,
+      });
+    }
+
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to create component",
+    });
   }
 });
 
-// ---------------- UPDATE COMPONENT ----------------
+// Update component
 router.put("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const validatedData = updateComponentSchema.parse(req.body);
-    const existing = await prisma.component.findUnique({ where: { id } });
-    if (!existing) return res.status(404).json({ error: "Component not found" });
-    if (existing.authorId !== req.user.id) return res.status(403).json({ error: "Access denied" });
+
+    // Check if component exists and user owns it
+    const existingComponent = await prisma.component.findUnique({
+      where: { id },
+    });
+
+    if (!existingComponent) {
+      return res.status(404).json({
+        error: "Component not found",
+        message: "The requested component does not exist",
+      });
+    }
+
+    if (existingComponent.authorId !== req.user.id) {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You can only update your own components",
+      });
+    }
 
     const component = await prisma.component.update({
       where: { id },
       data: validatedData,
       include: {
-        author: { select: { id: true, username: true, avatar: true, isVerified: true } },
-        _count: { select: { likes: true, comments: true } },
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+          },
+        },
       },
     });
 
     res.json({
       message: "Component updated successfully",
-      component: { ...component, tags: JSON.parse(component.tags || "[]") },
+      component: {
+        ...component,
+        tags: JSON.parse(component.tags || "[]"),
+      },
     });
   } catch (error) {
     console.error("Update component error:", error);
-    res.status(500).json({ error: "Internal server error" });
+
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({
+        error: "Validation error",
+        message: error.errors[0].message,
+        details: error.errors,
+      });
+    }
+
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to update component",
+    });
   }
 });
 
-// ---------------- DELETE COMPONENT ----------------
+// Delete component
 router.delete("/:id", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const existing = await prisma.component.findUnique({ where: { id } });
-    if (!existing) return res.status(404).json({ error: "Component not found" });
-    if (existing.authorId !== req.user.id && req.user.role !== "ADMIN")
-      return res.status(403).json({ error: "Access denied" });
 
-    await prisma.component.delete({ where: { id } });
-    res.json({ message: "Component deleted successfully" });
+    // Check if component exists and user owns it
+    const existingComponent = await prisma.component.findUnique({
+      where: { id },
+    });
+
+    if (!existingComponent) {
+      return res.status(404).json({
+        error: "Component not found",
+        message: "The requested component does not exist",
+      });
+    }
+
+    if (
+      existingComponent.authorId !== req.user.id &&
+      req.user.role !== "ADMIN"
+    ) {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You can only delete your own components",
+      });
+    }
+
+    await prisma.component.delete({
+      where: { id },
+    });
+
+    res.json({
+      message: "Component deleted successfully",
+    });
   } catch (error) {
     console.error("Delete component error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to delete component",
+    });
   }
 });
 
-// ---------------- LIKE / UNLIKE COMPONENT ----------------
+// Like/Unlike component
 router.post("/:id/like", authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
-    const component = await prisma.component.findUnique({ where: { id } });
-    if (!component) return res.status(404).json({ error: "Component not found" });
 
+    // Check if component exists
+    const component = await prisma.component.findUnique({
+      where: { id },
+    });
+
+    if (!component) {
+      return res.status(404).json({
+        error: "Component not found",
+        message: "The requested component does not exist",
+      });
+    }
+
+    // Check if already liked
     const existingLike = await prisma.componentLike.findUnique({
-      where: { userId_componentId: { userId: req.user.id, componentId: id } },
+      where: {
+        userId_componentId: {
+          userId: req.user.id,
+          componentId: id,
+        },
+      },
     });
 
     if (existingLike) {
-      await prisma.componentLike.delete({ where: { id: existingLike.id } });
-      return res.json({ message: "Component unliked", isLiked: false });
-    }
+      // Unlike
+      await prisma.componentLike.delete({
+        where: { id: existingLike.id },
+      });
 
-    await prisma.componentLike.create({ data: { userId: req.user.id, componentId: id } });
-    res.json({ message: "Component liked", isLiked: true });
+      res.json({
+        message: "Component unliked successfully",
+        isLiked: false,
+      });
+    } else {
+      // Like
+      await prisma.componentLike.create({
+        data: {
+          userId: req.user.id,
+          componentId: id,
+        },
+      });
+
+      res.json({
+        message: "Component liked successfully",
+        isLiked: true,
+      });
+    }
   } catch (error) {
     console.error("Like component error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to like/unlike component",
+    });
   }
 });
 
-// ---------------- USER COMPONENTS ----------------
+// Get user's components
 router.get("/user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
@@ -264,7 +501,15 @@ router.get("/user/:userId", async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = { authorId: userId, ...(includePrivate !== "true" && { isPublic: true }) };
+    // Build where clause
+    const where = {
+      authorId: userId,
+    };
+
+    // Only include private components if it's the user's own profile
+    if (includePrivate !== "true") {
+      where.isPublic = true;
+    }
 
     const [components, total] = await Promise.all([
       prisma.component.findMany({
@@ -273,25 +518,40 @@ router.get("/user/:userId", async (req, res) => {
         skip,
         take: limitNum,
         include: {
-          author: { select: { id: true, username: true, avatar: true, isVerified: true } },
-          _count: { select: { likes: true, comments: true } },
+          author: {
+            select: {
+              id: true,
+              username: true,
+              avatar: true,
+              isVerified: true,
+            },
+          },
+          _count: {
+            select: {
+              likes: true,
+              comments: true,
+            },
+          },
         },
       }),
       prisma.component.count({ where }),
     ]);
 
     res.json({
-      components: components.map((c) => ({
-        ...c,
-        complexityLabel: complexityMap[c.complexity] || c.complexity,
-        frameworkLabel: frameworkMap[c.framework] || c.framework,
-        tags: Array.isArray(c.tags) ? c.tags : JSON.parse(c.tags || "[]"),
-      })),
-      pagination: { page: pageNum, limit: limitNum, total, pages: Math.ceil(total / limitNum) },
+      components,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     });
   } catch (error) {
     console.error("Get user components error:", error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to fetch user components",
+    });
   }
 });
 

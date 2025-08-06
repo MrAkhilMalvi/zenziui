@@ -39,7 +39,7 @@ const complexityLevels = [
 
 export default function Gallery() {
   const [components, setComponents] = useState<Component[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
@@ -96,12 +96,11 @@ export default function Gallery() {
   // Filter and sort items
 const filteredItems = components
   .filter((item) => {
-    const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.tags.some((tag: string) =>
-        tag.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+   const matchesSearch =
+  item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
+  item.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+
 
     const matchesCategory =
       selectedCategory === "All" || item.category === selectedCategory;
@@ -298,6 +297,8 @@ const filteredItems = components
                     className={`h-4 w-4 ${likedItems.has(item.id) ? "fill-red-500 text-red-500" : ""}`}
                   />
                 </Button>
+
+
               </div>
 
               <p className="text-muted-foreground text-sm mb-3 line-clamp-2">
