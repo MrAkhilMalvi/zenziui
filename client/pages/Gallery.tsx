@@ -24,9 +24,6 @@ import {
   Layers,
 } from "lucide-react";
 
-
-
-
 const categories = ["All", "Buttons", "Cards", "Navigation", "Forms", "Layout"];
 const complexityLevels = [
   "All",
@@ -40,7 +37,12 @@ const complexityLevels = [
 export default function Gallery() {
   const [components, setComponents] = useState<Component[]>([]);
   const [, setLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, pages: 0 });
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 12,
+    total: 0,
+    pages: 0,
+  });
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedComplexity, setSelectedComplexity] = useState("All");
@@ -51,7 +53,14 @@ export default function Gallery() {
   // Load components from API
   useEffect(() => {
     loadComponents();
-  }, [searchQuery, selectedCategory, selectedComplexity, selectedFramework, sortBy, pagination.page]);
+  }, [
+    searchQuery,
+    selectedCategory,
+    selectedComplexity,
+    selectedFramework,
+    sortBy,
+    pagination.page,
+  ]);
 
   const loadComponents = async () => {
     setLoading(true);
@@ -59,34 +68,45 @@ export default function Gallery() {
       const params: any = {
         page: pagination.page,
         limit: pagination.limit,
-        sortBy: sortBy === 'popular' ? 'likes' : sortBy === 'downloads' ? 'downloads' : 'updatedAt',
-        sortOrder: 'desc' as const
+        sortBy:
+          sortBy === "popular"
+            ? "likes"
+            : sortBy === "downloads"
+              ? "downloads"
+              : "updatedAt",
+        sortOrder: "desc" as const,
       };
 
       if (searchQuery) params.search = searchQuery;
-      if (selectedCategory !== 'All') params.category = selectedCategory;
-      if (selectedComplexity !== 'All') params.complexity = selectedComplexity;
-      if (selectedFramework !== 'All') params.framework = selectedFramework;
+      if (selectedCategory !== "All") params.category = selectedCategory;
+      if (selectedComplexity !== "All") params.complexity = selectedComplexity;
+      if (selectedFramework !== "All") params.framework = selectedFramework;
 
       const response = await componentsAPI.getAll(params);
       console.log("Loaded components:", response);
       console.log(response);
       setComponents(response.components || []);
       if (response.pagination) {
-        setPagination(prev => ({ ...prev, ...response.pagination }));
+        setPagination((prev) => ({ ...prev, ...response.pagination }));
       }
     } catch (error: any) {
-      console.error('Failed to load components:', error);
+      console.error("Failed to load components:", error);
 
-      if (error.message.includes('Cannot connect to server') || error.message.includes('Network error')) {
-        toast.error('Server unavailable: Using demo data', {
-          description: 'The backend server needs to be started to load real components.',
-          duration: 5000
+      if (
+        error.message.includes("Cannot connect to server") ||
+        error.message.includes("Network error")
+      ) {
+        toast.error("Server unavailable: Using demo data", {
+          description:
+            "The backend server needs to be started to load real components.",
+          duration: 5000,
         });
         // Use demo data when server is unavailable
         setComponents([]);
       } else {
-        toast.error('Failed to load components: ' + (error.message || 'Unknown error'));
+        toast.error(
+          "Failed to load components: " + (error.message || "Unknown error")
+        );
       }
     } finally {
       setLoading(false);
@@ -94,43 +114,46 @@ export default function Gallery() {
   };
 
   // Filter and sort items
-const filteredItems = components
-  .filter((item) => {
-   const matchesSearch =
-  item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-  (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false) ||
-  item.tags.some((tag: string) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredItems = components
+    .filter((item) => {
+      const matchesSearch =
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description?.toLowerCase().includes(searchQuery.toLowerCase()) ??
+          false) ||
+        item.tags.some((tag: string) =>
+          tag.toLowerCase().includes(searchQuery.toLowerCase())
+        );
 
+      const matchesCategory =
+        selectedCategory === "All" || item.category === selectedCategory;
 
-    const matchesCategory =
-      selectedCategory === "All" || item.category === selectedCategory;
+      const matchesComplexity =
+        selectedComplexity === "All" || item.complexity === selectedComplexity;
 
-    const matchesComplexity =
-      selectedComplexity === "All" || item.complexity === selectedComplexity;
+      const matchesFramework =
+        selectedFramework === "All" || item.framework === selectedFramework;
 
-    const matchesFramework =
-      selectedFramework === "All" || item.framework === selectedFramework;
-
-    return (
-      matchesSearch &&
-      matchesCategory &&
-      matchesComplexity &&
-      matchesFramework
-    );
-  })
-  .sort((a, b) => {
-    switch (sortBy) {
-      case "popular":
-        return b._count.likes - a._count.likes;
-      case "downloads":
-        return b.downloads - a.downloads;
-      case "recent":
-        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
-      default:
-        return 0;
-    }
-  });
-
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesComplexity &&
+        matchesFramework
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "popular":
+          return b._count.likes - a._count.likes;
+        case "downloads":
+          return b.downloads - a.downloads;
+        case "recent":
+          return (
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+          );
+        default:
+          return 0;
+      }
+    });
 
   const handleLike = (id: string) => {
     setLikedItems((prev) => {
@@ -297,8 +320,6 @@ const filteredItems = components
                     className={`h-4 w-4 ${likedItems.has(item.id) ? "fill-red-500 text-red-500" : ""}`}
                   />
                 </Button>
-
-
               </div>
 
               <p className="text-muted-foreground text-sm mb-3 line-clamp-2">

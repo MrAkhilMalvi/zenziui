@@ -20,7 +20,7 @@ const createComponentSchema = z.object({
     .array(z.string())
     .default([])
     .transform((arr) => JSON.stringify(arr)),
-  complexity:  z.string().default("SIMPLE"),
+  complexity: z.string().default("SIMPLE"),
 
   isPublic: z.boolean().default(true),
   framework: z
@@ -72,10 +72,9 @@ router.get("/", optionalAuth, async (req, res) => {
       });
     }
 
-  if (complexity) {
-  where.complexity = complexity.toUpperCase();
-}
-
+    if (complexity) {
+      where.complexity = complexity.toUpperCase();
+    }
 
     if (framework) {
       where.framework = framework;
@@ -96,29 +95,26 @@ router.get("/", optionalAuth, async (req, res) => {
       }
     }
 
-let orderBy;
-if (sortBy === "likes") {
-  orderBy: {
-  likes: {
-    _count: 'desc'
-  }
-}
-
-} else if (sortBy === "downloads") {
-  orderBy = {
-    downloads: sortOrder,
-  };
-} else if (sortBy === "views") {
-  orderBy = {
-    views: sortOrder,
-  };
-} else {
-  orderBy = {
-    [sortBy]: sortOrder,
-  };
-}
-
-
+    let orderBy;
+    if (sortBy === "likes") {
+      orderBy: {
+        likes: {
+          _count: "desc";
+        }
+      }
+    } else if (sortBy === "downloads") {
+      orderBy = {
+        downloads: sortOrder,
+      };
+    } else if (sortBy === "views") {
+      orderBy = {
+        views: sortOrder,
+      };
+    } else {
+      orderBy = {
+        [sortBy]: sortOrder,
+      };
+    }
 
     const [components, total] = await Promise.all([
       prisma.component.findMany({
