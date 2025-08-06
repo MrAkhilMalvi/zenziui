@@ -3,7 +3,8 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { authenticateToken } = require("../middleware/auth.js");
-const { PrismaClient } = require("@prisma/client");
+const { PrismaClient, UploadType } = require("@prisma/client");
+// import cloudinary from "../config/cloudinary.js";
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -54,8 +55,8 @@ const fileFilter = (req, file, cb) => {
   } else {
     cb(
       new Error(
-        "Invalid file type. Only JPEG, PNG, GIF, WebP, PDF, and text files are allowed.",
-      ),
+        "Invalid file type. Only JPEG, PNG, GIF, WebP, PDF, and text files are allowed."
+      )
     );
   }
 };
@@ -85,11 +86,12 @@ router.post("/", authenticateToken, upload.single("file"), async (req, res) => {
     }
 
     // Generate public URL
-    const publicUrl = `/uploads/${uploadType.toLowerCase()}s/${req.file.filename}`;
+    const publicUrl = `/uploads/${uploadType.toLowerCase()}s/${
+      req.file.filename
+    }`;
 
     // Save to database
     const uploadRecord = await prisma.upload.create({
-      
       data: {
         filename: req.file.filename,
         originalName: req.file.originalname,
@@ -201,7 +203,7 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     const filePath = path.join(
       uploadsDir,
       upload.type === "IMAGE" ? "images" : "documents",
-      upload.filename,
+      upload.filename
     );
 
     if (fs.existsSync(filePath)) {
@@ -224,5 +226,55 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     });
   }
 });
+
+router.post(
+  "/avatar",
+  authenticateToken,
+  upload.single("avatar"),
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          error: "No file uploaded",
+          message: "Please select an avatar image",
+        });
+      }
+
+      if (!req.file.mimetype.startsWith("image/")) {
+        return res.status(400).json({
+          error: "Invalid file type",
+          message: "Avatar must be an image (JPEG, PNG, GIF, WebP)",
+        });
+      }
+
+      // Generate public URL
+      const avatarUrl = `${req.protocol}://${req.get("host")}/uploads/images/${req.file.filename}`;
+
+      // Optionally update user's avatar in DB directly:
+      const updatedUser = await prisma.user.update({
+        where: { id: req.user.id },
+        data: { avatar: avatarUrl },
+      });
+
+      res.status(200).json({
+        message: "Avatar uploaded successfully",
+        user: updatedUser,
+        avatarUrl,
+      });
+    } catch (error) {
+      console.error("Avatar upload error:", error);
+
+      // Clean up on error
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+
+      res.status(500).json({
+        error: "Internal server error",
+        message: "Failed to upload avatar",
+      });
+    }
+  }
+);
 
 module.exports = router;

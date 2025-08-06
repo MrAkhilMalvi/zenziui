@@ -93,7 +93,11 @@ app.use(
   app.use("/api", limiter);
 
   // Static file serving for uploads
-  app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+  app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
+  setHeaders: (res) => {
+    res.set("Cross-Origin-Resource-Policy", "cross-origin");
+  }
+}));
 
   // Health check
   app.get("/api/health", (_req, res) => {

@@ -216,7 +216,7 @@ const updateProfileSchema = z.object({
   twitter: z.string().optional(),
 });
 
-router.patch("/profile", authenticateToken, async (req, res) => {
+router.post("/profile", authenticateToken, async (req, res) => {
   try {
     const validatedData = updateProfileSchema.parse(req.body);
 

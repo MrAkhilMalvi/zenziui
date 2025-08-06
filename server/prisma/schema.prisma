@@ -43,6 +43,8 @@ model User {
   @@map("users")
 }
 
+
+
 model Component {
   id          String      @id @default(cuid())
   name        String
@@ -113,6 +115,12 @@ model ComponentCollection {
   @@map("component_collections")
 }
 
+enum UploadType {
+  IMAGE
+  VIDEO
+  DOCUMENT
+}
+
 model Upload {
   id        String     @id @default(cuid())
   filename  String
@@ -120,7 +128,7 @@ model Upload {
   mimetype  String
   size      Int
   url       String
-  type      String     @default("IMAGE") // IMAGE, VIDEO, DOCUMENT
+  type      String @default("IMAGE")
   createdAt DateTime   @default(now())
 
   // Relations

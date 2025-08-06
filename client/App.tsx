@@ -18,6 +18,7 @@ import "./global.css";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Collections from "./pages/Collections";
+import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
                   <Route path="/settings" element={<Settings />} />
                   <Route path="*" element={<NotFound />} />
                   <Route path="/collections" element={<Collections />} />
+                   <Route path="/auth/callback" element={<AuthCallback />} />
                 </Routes>
               </main>
             </div>
