@@ -1,9 +1,7 @@
 import { useState } from "react";
 import {
-  ComponentConfig,
-  ViewportMode,
-  PropertyTab,
-  ComponentItem,
+
+  components,
 } from "@/types";
 import { DEFAULT_COMPONENT_CONFIG } from "@/constants/components";
 import {
@@ -17,117 +15,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import { Copy, Check } from "lucide-react";
+import Header from "@/components/Header";
 
 // Sample components data
-const components: ComponentItem[] = [
-  {
-    id: "button",
-    name: "Button",
-    category: "Interactive",
-    tags: ["button", "click", "action"],
-    description: "A customizable button component",
-    complexity: "SIMPLE",
-    framework: "REACT",
-    code: "",
-    isPublic: true,
-    isFeatured: true,
-    downloads: 1234,
-    views: 5678,
-    version: "1.0.0",
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-    author: { id: "1", username: "admin", isVerified: true },
-    _count: { likes: 45, comments: 12 },
-  },
-  {
-    id: "card",
-    name: "Card",
-    category: "Layout",
-    tags: ["card", "container", "content"],
-    description: "A flexible content container",
-    complexity: "SIMPLE",
-    framework: "REACT",
-    code: "",
-    isPublic: true,
-    isFeatured: true,
-    downloads: 987,
-    views: 3456,
-    version: "1.0.0",
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-    author: { id: "1", username: "admin", isVerified: true },
-    _count: { likes: 32, comments: 8 },
-  },
-  {
-    id: "badge",
-    name: "Badge",
-    category: "Display",
-    tags: ["badge", "label", "status"],
-    description: "A small status indicator",
-    complexity: "SIMPLE",
-    framework: "REACT",
-    code: "",
-    isPublic: true,
-    isFeatured: false,
-    downloads: 567,
-    views: 1234,
-    version: "1.0.0",
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-    author: { id: "1", username: "admin", isVerified: true },
-    _count: { likes: 18, comments: 5 },
-  },
-  {
-    id: "input",
-    name: "Input",
-    category: "Forms",
-    tags: ["input", "form", "text"],
-    description: "A text input field",
-    complexity: "SIMPLE",
-    framework: "REACT",
-    code: "",
-    isPublic: true,
-    isFeatured: false,
-    downloads: 789,
-    views: 2345,
-    version: "1.0.0",
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-    author: { id: "1", username: "admin", isVerified: true },
-    _count: { likes: 25, comments: 7 },
-  },
-  {
-    id: "avatar",
-    name: "Avatar",
-    category: "Display",
-    tags: ["avatar", "profile", "user"],
-    description: "A user profile picture placeholder",
-    complexity: "SIMPLE",
-    framework: "REACT",
-    code: "",
-    isPublic: true,
-    isFeatured: false,
-    downloads: 456,
-    views: 987,
-    version: "1.0.0",
-    createdAt: "2024-01-01",
-    updatedAt: "2024-01-01",
-    author: { id: "1", username: "admin", isVerified: true },
-    _count: { likes: 15, comments: 3 },
-  },
-];
+
 
 export default function Explore() {
   // State management
-  const [config, setConfig] = useState<ComponentConfig>(
+  const [config, setConfig] = useState<any>(
     DEFAULT_COMPONENT_CONFIG,
   );
   const [selectedComponent, setSelectedComponent] = useState("button");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewportMode, setViewportMode] = useState<ViewportMode>("desktop");
+  const [viewportMode, setViewportMode] = useState<any>("desktop");
   const [canvasScale, setCanvasScale] = useState(100);
   const [activePropertyTab, setActivePropertyTab] =
-    useState<PropertyTab>("layout");
+    useState<any>("layout");
   const [isPropertiesPanelOpen, setIsPropertiesPanelOpen] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -144,8 +47,8 @@ export default function Explore() {
   // );
 
   // Update configuration
-  const updateConfig = (key: keyof ComponentConfig, value: any) => {
-    setConfig((prev) => ({ ...prev, [key]: value }));
+  const updateConfig = (key: keyof any, value: any) => {
+    setConfig((prev:any) => ({ ...prev, [key]: value }));
   };
 
   // Generate and copy code
@@ -180,13 +83,14 @@ export default function Explore() {
   // Download component
   const handleDownloadComponent = () => {
     const componentCode = generateComponentCode(selectedComponent, config);
-    const selectedComp = components.find((c) => c.id === selectedComponent);
+    const selectedComp = components.find((c:any) => c.id === selectedComponent);
     const filename = `${selectedComp?.name || selectedComponent}.tsx`;
     downloadComponentAsFile(filename, componentCode);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
+      <Header />
       <div
         className={`h-screen ${isFullscreen ? "fixed inset-0 z-50 pt-0" : ""} flex flex-col`}
       >
@@ -225,7 +129,7 @@ export default function Explore() {
                     </h1>
                     <p className="text-gray-600 dark:text-gray-400">
                       Customize and preview{" "}
-                      {components.find((c) => c.id === selectedComponent)?.name}{" "}
+                      {components.find((c:any) => c.id === selectedComponent)?.name}{" "}
                       component
                     </p>
                   </div>
@@ -292,14 +196,14 @@ export default function Explore() {
                     <div>
                       <h3 className="font-semibold">
                         {
-                          components.find((c) => c.id === selectedComponent)
+                          components.find((c:any) => c.id === selectedComponent)
                             ?.name
                         }
                       </h3>
                       <p className="text-sm text-muted-foreground">
                         Complexity:{" "}
                         {
-                          components.find((c) => c.id === selectedComponent)
+                          components.find((c:any) => c.id === selectedComponent)
                             ?.complexity
                         }
                       </p>
@@ -307,7 +211,7 @@ export default function Explore() {
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary">
                         {
-                          components.find((c) => c.id === selectedComponent)
+                          components.find((c:any) => c.id === selectedComponent)
                             ?.category
                         }
                       </Badge>

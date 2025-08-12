@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "./hooks/useAuth";
-import Header from "./components/Header";
 import { FloatingShapes, CursorFollow, AnimatedPageWrapper } from "./components/3d";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
@@ -19,6 +18,9 @@ import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import "./global.css";
 import Profile from "./pages/Profile";
+import Collections from "./pages/Collections";
+import CollectionDetail from "./pages/CollectionDetail";
+import Settings from "./pages/Settings";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +75,21 @@ const AnimatedRoutes = () => {
             <AuthCallback />
           </AnimatedPageWrapper>
         } />
+          <Route path="/collections" element={
+          <AnimatedPageWrapper>
+            <Collections />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/collections/:id" element={
+          <AnimatedPageWrapper>
+            <CollectionDetail />
+          </AnimatedPageWrapper>
+        } />
+         <Route path="/settings" element={
+          <AnimatedPageWrapper>
+            <Settings />
+          </AnimatedPageWrapper>
+        } />
         <Route path="*" element={
           <AnimatedPageWrapper>
             <NotFound />
@@ -100,7 +117,7 @@ const App = () => (
 
               {/* Main Content */}
               <div className="relative z-10">
-                <Header />
+               
                 <main>
                   <AnimatedRoutes />
                 </main>

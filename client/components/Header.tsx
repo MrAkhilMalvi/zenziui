@@ -142,7 +142,7 @@ function Header() {
                 className="rounded-full hover:bg-muted/50"
               >
                 <a
-                  href="https://github.com"
+                  href="https://github.com/MrAkhilMalvi/"
                   target="_blank"
                   rel="noopener noreferrer"
                 >

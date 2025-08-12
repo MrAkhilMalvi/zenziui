@@ -15,6 +15,7 @@ import { components, auth, uploads } from "@/lib/api";
 import { User, Mail, Edit3, Heart, Download, Component } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import Header from "@/components/Header";
 
 export default function Profile() {
   const { user, isAuthenticated, setUser } = useAuth();
@@ -123,6 +124,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 pt-20">
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
           <div className="mb-8">

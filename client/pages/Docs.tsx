@@ -24,6 +24,7 @@ import {
   Layout,
   Layers,
 } from "lucide-react";
+import Header from "@/components/Header";
 
 const navigationItems = [
   {
@@ -69,7 +70,7 @@ const navigationItems = [
 
 const codeExamples = {
   installation: `# Clone the ZenZiUI repository
-git clone https://github.com/your-username/zenziui.git
+git clone https://github.com/MrAkhilMalvi/zenziui.git
 cd zenziui
 
 # Install all dependencies (client + server)
@@ -284,6 +285,7 @@ export default function Docs() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <Header />
       <main className="flex-1">
         {/* Hero Section */}
         <section className="py-16 bg-gradient-to-b from-background to-muted/20">
