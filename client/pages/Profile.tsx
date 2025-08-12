@@ -21,6 +21,7 @@ export default function Profile() {
   const [userComponents, setUserComponents] = useState<any[]>([]);
   const [stats, setStats] = useState({ components: 0, likes: 0, downloads: 0 });
   const [isEditing, setIsEditing] = useState(false);
+  const [cacheBuster, setCacheBuster] = useState(Date.now());
   const [editForm, setEditForm] = useState({
     firstName: "",
     lastName: "",
@@ -91,20 +92,19 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
   if (!file) return;
 
   try {
-    // destructure both user & avatarUrl
     const { user: updatedUser } = await uploads.avatar(file); 
-    console.log("Avatar updated:", updatedUser.avatar);
     setUser(updatedUser);
     setEditForm((prev) => ({
-  ...prev,
-  avatar: updatedUser.avatar ?? "",  // fallback to empty string
-}));
-
+      ...prev,
+      avatar: updatedUser.avatar ?? "",
+    }));
+    setCacheBuster(Date.now()); // <-- Update only on avatar change
     toast.success("Avatar updated!");
   } catch (error: any) {
     toast.error(error.message || "Failed to upload avatar");
   }
 };
+
 
 
   if (!isAuthenticated) {
@@ -147,7 +147,7 @@ const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
                   <label htmlFor="avatarInput">
                     {user?.avatar ? (
                       <img
-                        src={`${user.avatar}?t=${Date.now()}`}
+                        src={`${user.avatar}?t=${cacheBuster}`}
                         alt="Avatar"
                         className="w-24 h-24 rounded-full object-cover border-2 border-primary"
                       />

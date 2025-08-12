@@ -1,13 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
-import { Badge } from "./ui/badge";
 import {
   Github,
   Moon,
   Sun,
   Menu,
   X,
-  Sparkles,
   User,
   LogOut,
 } from "lucide-react";
@@ -20,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
+import Logo from "./Logo";
 
 function Header() {
   const [isDark, setIsDark] = useState(false);
@@ -89,84 +88,78 @@ function Header() {
           : "bg-transparent py-4"
       }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="relative">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 via-indigo-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-glow transition-all duration-300 group-hover:scale-110">
-                <span className="text-white font-bold text-lg">Z</span>
-              </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full animate-pulse"></div>
-            </div>
-            <div className="flex flex-col">
-              <span className="font-bold text-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                ZenZiUI
-              </span>
-              <Badge variant="secondary" className="text-xs px-1 py-0 h-4 w-fit">
-                <Sparkles className="h-2 w-2 mr-1" />
-                Beta
-              </Badge>
-            </div>
-          </Link>
+       <div className="container mx-auto px-4">
+          <div className="flex items-center justify-between">
+            {/* Logo */}
+            <Logo size="md" showBeta={true} animated={true} />
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className={`px-4 py-2 rounded-lg transition-all duration-200 relative overflow-hidden group ${
-                  location.pathname === item.href
-                    ? "text-primary bg-primary/10"
-                    : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
-                }`}
+            {/* Desktop Navigation */}
+            <nav className="hidden lg:flex items-center space-x-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`px-4 py-2 rounded-lg transition-all duration-200 relative overflow-hidden group ${
+                    location.pathname === item.href
+                      ? "text-primary bg-primary/10"
+                      : "text-foreground/70 hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <span className="relative z-10">{item.label}</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
+                </Link>
+              ))}
+            </nav>
+
+            {/* Right side actions */}
+            <div className="flex items-center space-x-2">
+              {/* Theme toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleTheme}
+                className="relative w-10 h-10 rounded-full hover:bg-muted/50 transition-all duration-200"
               >
-                <span className="relative z-10">{item.label}</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-secondary/10 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-300"></div>
-              </Link>
-            ))}
-          </nav>
+                <div className="relative w-5 h-5">
+                  <Sun
+                    className={`absolute h-5 w-5 transition-all duration-300 ${
+                      isDark ? "rotate-90 scale-0" : "rotate-0 scale-100"
+                    }`}
+                  />
+                  <Moon
+                    className={`absolute h-5 w-5 transition-all duration-300 ${
+                      isDark ? "rotate-0 scale-100" : "-rotate-90 scale-0"
+                    }`}
+                  />
+                </div>
+              </Button>
 
-          {/* Right Actions */}
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleTheme}
-              className="relative w-10 h-10 rounded-full hover:bg-muted/50 transition-all duration-200"
-            >
-              <div className="relative w-5 h-5">
-                <Sun
-                  className={`absolute h-5 w-5 transition-all duration-300 ${
-                    isDark ? "rotate-90 scale-0" : "rotate-0 scale-100"
-                  }`}
-                />
-                <Moon
-                  className={`absolute h-5 w-5 transition-all duration-300 ${
-                    isDark ? "rotate-0 scale-100" : "-rotate-90 scale-0"
-                  }`}
-                />
-              </div>
-            </Button>
+              {/* GitHub */}
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className="rounded-full hover:bg-muted/50"
+              >
+                <a
+                  href="https://github.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Github className="h-5 w-5" />
+                </a>
+              </Button>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              asChild
-              className="rounded-full hover:bg-muted/50"
-            >
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer">
-                <Github className="h-5 w-5" />
-              </a>
-            </Button>
-
-            {/* User Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted/50">
-                  <User className="h-5 w-5" />
-                </Button>
+              {/* Auth Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full hover:bg-muted/50"
+                  >
+                    <User className="h-5 w-5" />
+                  </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56 glass">
                 {isAuthenticated ? (
@@ -251,4 +244,5 @@ function Header() {
 }
 
 export default Header;
-  
+
+

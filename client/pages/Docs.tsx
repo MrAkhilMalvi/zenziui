@@ -13,22 +13,16 @@ import {
   Copy,
   CheckCircle,
   Zap,
-  Terminal,
   Settings,
-  Monitor,
-  Layers,
-  GitBranch,
   Package,
   Play,
   Info,
   Eye,
   Database,
-  Cloud,
-  Cpu,
   Puzzle,
   Rocket,
-  TrendingUp,
   Layout,
+  Layers,
 } from "lucide-react";
 
 const navigationItems = [
@@ -39,7 +33,7 @@ const navigationItems = [
         id: "introduction",
         title: "Introduction",
         icon: <Book className="h-4 w-4" />,
-        badge: "New",
+        badge: "Beta",
       },
       {
         id: "installation",
@@ -52,15 +46,10 @@ const navigationItems = [
         title: "Your First Component",
         icon: <Play className="h-4 w-4" />,
       },
-      {
-        id: "configuration",
-        title: "Configuration",
-        icon: <Settings className="h-4 w-4" />,
-      },
     ],
   },
   {
-    title: "Core Concepts",
+    title: "Core Features",
     items: [
       {
         id: "visual-editor",
@@ -69,85 +58,10 @@ const navigationItems = [
         badge: "Core",
       },
       {
-        id: "component-system",
-        title: "Component System",
-        icon: <Layers className="h-4 w-4" />,
-      },
-      {
-        id: "theming",
-        title: "Theming & Styling",
-        icon: <Palette className="h-4 w-4" />,
-      },
-      {
-        id: "responsive-design",
-        title: "Responsive Design",
-        icon: <Monitor className="h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Advanced Features",
-    items: [
-      {
         id: "custom-components",
         title: "Custom Components",
         icon: <Puzzle className="h-4 w-4" />,
-        badge: "Pro",
-      },
-      {
-        id: "animations",
-        title: "Animations & Effects",
-        icon: <Zap className="h-4 w-4" />,
-      },
-      {
-        id: "state-management",
-        title: "State Management",
-        icon: <Database className="h-4 w-4" />,
-      },
-      {
-        id: "performance",
-        title: "Performance",
-        icon: <TrendingUp className="h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "API Reference",
-    items: [
-      {
-        id: "components-api",
-        title: "Components API",
-        icon: <Code className="h-4 w-4" />,
-      },
-      {
-        id: "hooks-api",
-        title: "Hooks API",
-        icon: <GitBranch className="h-4 w-4" />,
-      },
-      {
-        id: "utilities",
-        title: "Utilities",
-        icon: <Terminal className="h-4 w-4" />,
-      },
-    ],
-  },
-  {
-    title: "Deployment",
-    items: [
-      {
-        id: "build-process",
-        title: "Build Process",
-        icon: <Cpu className="h-4 w-4" />,
-      },
-      {
-        id: "production",
-        title: "Production Deploy",
-        icon: <Cloud className="h-4 w-4" />,
-      },
-      {
-        id: "optimization",
-        title: "Optimization",
-        icon: <Rocket className="h-4 w-4" />,
+        badge: "Advanced",
       },
     ],
   },
@@ -155,15 +69,20 @@ const navigationItems = [
 
 const codeExamples = {
   installation: `# Clone the ZenZiUI repository
-git clone https://github.com/zenziui/zenziui.git
-
-# Navigate to project directory
+git clone https://github.com/your-username/zenziui.git
 cd zenziui
 
-# Install dependencies
-npm install
+# Install all dependencies (client + server)
+npm run install:all
 
-# Start development server
+# Set up the database (requires PostgreSQL)
+cd server
+npm run db:generate
+npm run db:push
+npm run db:seed
+
+# Start the development server (frontend + backend)
+cd ..
 npm run dev`,
 
   basicComponent: `import { Button } from '@/components/ui/button';
@@ -279,11 +198,70 @@ export default function Docs() {
 
   const copyToClipboard = async (text: string, id: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      setCopied(id);
-      setTimeout(() => setCopied(null), 2000);
+      let copySuccess = false;
+
+      // Try modern clipboard API first
+      if (navigator.clipboard && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(text);
+          copySuccess = true;
+        } catch (clipboardErr) {
+          console.warn("Clipboard API failed, trying fallback...");
+        }
+      }
+
+      // Fallback method if clipboard API fails or isn't available
+      if (!copySuccess) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+
+        try {
+          const successful = document.execCommand('copy');
+          if (successful) {
+            copySuccess = true;
+          }
+        } catch (fallbackErr) {
+          console.error("Fallback copy failed: ", fallbackErr);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+
+      if (copySuccess) {
+        setCopied(id);
+        setTimeout(() => setCopied(null), 3000);
+      } else {
+        // Create a temporary notification
+        const notification = document.createElement('div');
+        notification.textContent = 'Please manually copy the code';
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #ef4444;
+          color: white;
+          padding: 12px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          z-index: 1000;
+          animation: fadeInOut 3s ease-in-out;
+        `;
+        document.body.appendChild(notification);
+        setTimeout(() => {
+          if (document.body.contains(notification)) {
+            document.body.removeChild(notification);
+          }
+        }, 3000);
+      }
     } catch (err) {
-      console.error("Failed to copy text: ", err);
+      console.error("Copy operation failed: ", err);
     }
   };
 
@@ -313,7 +291,7 @@ export default function Docs() {
             <div className="max-w-4xl mx-auto">
               <Badge variant="outline" className="mb-4">
                 <Book className="h-3 w-3 mr-1" />
-                Documentation v2.0
+                Beta Documentation v1.0
               </Badge>
 
               <h1 className="text-4xl md:text-6xl font-bold mb-6 text-gradient">
@@ -321,8 +299,8 @@ export default function Docs() {
               </h1>
 
               <p className="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-                Comprehensive guides, API references, and examples to help you
-                build amazing UIs with ZenZiUI's visual component editor.
+                Essential guides and examples to get started with ZenZiUI - a modern
+                component library platform with visual editing capabilities. Currently in beta.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -435,12 +413,25 @@ export default function Docs() {
                         <CardContent className="space-y-6">
                           <div className="prose prose-gray dark:prose-invert max-w-none">
                             <p className="text-lg leading-relaxed">
-                              ZenZiUI is a revolutionary visual component editor
-                              that bridges the gap between design and
-                              development. Build production-ready React
-                              components with real-time visual editing, advanced
-                              theming, and seamless code generation.
+                              ZenZiUI is a modern component library platform that combines
+                              visual editing with powerful React components. This beta version
+                              includes 45+ pre-built components, a visual editor for customization,
+                              and seamless integration with Tailwind CSS. Perfect for rapid
+                              prototyping and production applications.
                             </p>
+
+                            <div className="bg-yellow-50 dark:bg-yellow-950/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mt-4">
+                              <div className="flex items-start gap-2">
+                                <Info className="h-5 w-5 text-yellow-600 mt-0.5" />
+                                <div>
+                                  <h4 className="font-semibold text-yellow-900 dark:text-yellow-100">Beta Version Notice</h4>
+                                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                                    This is a beta release. Features may change and some functionality is still in development.
+                                    Feedback and contributions are welcome!
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                           </div>
 
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -511,6 +502,14 @@ export default function Docs() {
                             </TabsList>
 
                             <TabsContent value="npm" className="space-y-4">
+                              <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg border">
+                                <h4 className="font-semibold mb-2">Prerequisites</h4>
+                                <ul className="text-sm text-muted-foreground space-y-1">
+                                  <li>• Node.js 18+ and npm</li>
+                                  <li>• PostgreSQL database (or use MCP integrations)</li>
+                                  <li>• Git for cloning the repository</li>
+                                </ul>
+                              </div>
                               <div className="relative">
                                 <pre className="bg-muted/50 p-4 rounded-lg text-sm overflow-x-auto border">
                                   <code>
@@ -523,7 +522,11 @@ export default function Docs() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="absolute top-2 right-2"
+                                  className={`absolute top-2 right-2 transition-all duration-200 ${
+                                    copied === "install-npm"
+                                      ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                      : "hover:bg-muted"
+                                  }`}
                                   onClick={() =>
                                     copyToClipboard(
                                       codeExamples.installation,
@@ -532,7 +535,10 @@ export default function Docs() {
                                   }
                                 >
                                   {copied === "install-npm" ? (
-                                    <CheckCircle className="h-4 w-4" />
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                      <span className="text-xs">Copied!</span>
+                                    </div>
                                   ) : (
                                     <Copy className="h-4 w-4" />
                                   )}
@@ -552,7 +558,11 @@ export default function Docs() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="absolute top-2 right-2"
+                                  className={`absolute top-2 right-2 transition-all duration-200 ${
+                                    copied === "install-yarn"
+                                      ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                      : "hover:bg-muted"
+                                  }`}
                                   onClick={() =>
                                     copyToClipboard(
                                       codeExamples.installation
@@ -563,7 +573,10 @@ export default function Docs() {
                                   }
                                 >
                                   {copied === "install-yarn" ? (
-                                    <CheckCircle className="h-4 w-4" />
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                      <span className="text-xs">Copied!</span>
+                                    </div>
                                   ) : (
                                     <Copy className="h-4 w-4" />
                                   )}
@@ -583,7 +596,11 @@ export default function Docs() {
                                 <Button
                                   size="sm"
                                   variant="outline"
-                                  className="absolute top-2 right-2"
+                                  className={`absolute top-2 right-2 transition-all duration-200 ${
+                                    copied === "install-pnpm"
+                                      ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                      : "hover:bg-muted"
+                                  }`}
                                   onClick={() =>
                                     copyToClipboard(
                                       codeExamples.installation
@@ -594,7 +611,10 @@ export default function Docs() {
                                   }
                                 >
                                   {copied === "install-pnpm" ? (
-                                    <CheckCircle className="h-4 w-4" />
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                      <span className="text-xs">Copied!</span>
+                                    </div>
                                   ) : (
                                     <Copy className="h-4 w-4" />
                                   )}
@@ -603,17 +623,32 @@ export default function Docs() {
                             </TabsContent>
                           </Tabs>
 
-                          <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
-                            <div>
-                              <h4 className="font-semibold text-blue-900 dark:text-blue-100">
-                                Next Steps
-                              </h4>
-                              <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                                After installation, visit
-                                http://localhost:3000/explore to start building
-                                your first component with the visual editor.
-                              </p>
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-3 p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                              <div>
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                                  Next Steps
+                                </h4>
+                                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                                  After installation, visit http://localhost:8080/explore to start
+                                  building your first component with the visual editor. The backend
+                                  API runs on http://localhost:3001.
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-start gap-3 p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                              <Database className="h-5 w-5 text-orange-600 mt-0.5" />
+                              <div>
+                                <h4 className="font-semibold text-orange-900 dark:text-orange-100">
+                                  Database Setup
+                                </h4>
+                                <p className="text-sm text-orange-700 dark:text-orange-300 mt-1">
+                                  For full functionality, you'll need PostgreSQL. Consider using MCP integrations
+                                  like Supabase, Neon, or Prisma for easy database setup.
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </CardContent>
@@ -652,7 +687,11 @@ export default function Docs() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="absolute top-2 right-2"
+                                className={`absolute top-2 right-2 transition-all duration-200 ${
+                                  copied === "basic-component"
+                                    ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                    : "hover:bg-muted"
+                                }`}
                                 onClick={() =>
                                   copyToClipboard(
                                     codeExamples.basicComponent,
@@ -661,7 +700,10 @@ export default function Docs() {
                                 }
                               >
                                 {copied === "basic-component" ? (
-                                  <CheckCircle className="h-4 w-4" />
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                    <span className="text-xs">Copied!</span>
+                                  </div>
                                 ) : (
                                   <Copy className="h-4 w-4" />
                                 )}
@@ -683,7 +725,11 @@ export default function Docs() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="absolute top-2 right-2"
+                                className={`absolute top-2 right-2 transition-all duration-200 ${
+                                  copied === "advanced-component"
+                                    ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                    : "hover:bg-muted"
+                                }`}
                                 onClick={() =>
                                   copyToClipboard(
                                     codeExamples.advancedComponent,
@@ -692,7 +738,10 @@ export default function Docs() {
                                 }
                               >
                                 {copied === "advanced-component" ? (
-                                  <CheckCircle className="h-4 w-4" />
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                    <span className="text-xs">Copied!</span>
+                                  </div>
                                 ) : (
                                   <Copy className="h-4 w-4" />
                                 )}
@@ -829,7 +878,11 @@ export default function Docs() {
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="absolute top-2 right-2"
+                                className={`absolute top-2 right-2 transition-all duration-200 ${
+                                  copied === "custom-hook"
+                                    ? "bg-green-100 border-green-300 text-green-700 dark:bg-green-900 dark:border-green-700 dark:text-green-300"
+                                    : "hover:bg-muted"
+                                }`}
                                 onClick={() =>
                                   copyToClipboard(
                                     codeExamples.customHook,
@@ -838,10 +891,47 @@ export default function Docs() {
                                 }
                               >
                                 {copied === "custom-hook" ? (
-                                  <CheckCircle className="h-4 w-4" />
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle className="h-4 w-4 animate-in zoom-in duration-200" />
+                                    <span className="text-xs">Copied!</span>
+                                  </div>
                                 ) : (
                                   <Copy className="h-4 w-4" />
                                 )}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </section>
+
+                    {/* Coming Soon Notice */}
+                    <section className="scroll-mt-24">
+                      <Card className="glass border-blue-200 dark:border-blue-800">
+                        <CardContent className="p-8 text-center">
+                          <div className="flex flex-col items-center gap-4">
+                            <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                              <Rocket className="h-8 w-8 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-semibold mb-2">More Documentation Coming Soon</h3>
+                              <p className="text-muted-foreground max-w-md">
+                                This is a beta version. Additional sections like Component System,
+                                Theming, API Reference, and Deployment guides will be added in future updates.
+                              </p>
+                            </div>
+                            <div className="flex gap-2 mt-4">
+                              <Button variant="outline" size="sm" asChild>
+                                <a href="/explore">
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  Explore Components
+                                </a>
+                              </Button>
+                              <Button variant="outline" size="sm" asChild>
+                                <a href="/gallery">
+                                  <Layout className="h-4 w-4 mr-2" />
+                                  View Gallery
+                                </a>
                               </Button>
                             </div>
                           </div>
