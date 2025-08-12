@@ -27,6 +27,7 @@ import {
   FileText,
   Zap,
 } from "lucide-react";
+import Header from "@/components/Header";
 
 const categories = [
   "Buttons",
@@ -80,7 +81,9 @@ export default function Upload() {
   // Check if user is authenticated
   if (!isAuthenticated) {
     return (
+      
       <div className="container mx-auto px-4 py-8">
+        
         <div className="max-w-2xl mx-auto text-center">
           <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertCircle className="h-8 w-8 text-white" />
@@ -193,6 +196,7 @@ export default function Upload() {
   if (uploadSuccess) {
     return (
       <div className="container mx-auto px-4 py-8">
+        
         <div className="max-w-2xl mx-auto text-center">
           <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="h-8 w-8 text-white" />
@@ -221,9 +225,9 @@ export default function Upload() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Header */}
+      <Header />
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
+        <div className="inline-flex mt-10 items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
           Share with Community
         </div>
         <h1 className="text-4xl font-bold mb-4">Upload Your Component</h1>

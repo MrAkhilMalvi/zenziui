@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Layers,
 } from "lucide-react";
+import Header from "@/components/Header";
 
 const categories = ["All", "Buttons", "Cards", "Navigation", "Forms", "Layout"];
 const complexityLevels = [
@@ -169,9 +170,10 @@ export default function Gallery() {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <Header />
       {/* Hero Section */}
       <div className="text-center mb-12">
-        <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
+        <div className="inline-flex items-center mt-14 gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium mb-4">
           <Layers className="h-4 w-4" />
           Community Gallery
         </div>

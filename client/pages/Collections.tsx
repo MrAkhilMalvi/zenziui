@@ -6,11 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { collections as collectionsAPI, components as componentsAPI } from "@/lib/api";
-import { Collection, Component } from "@/lib/api";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  collections as collectionsAPI,
+  components as componentsAPI,
+} from "@/lib/api";
+import { Collection } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import {
@@ -25,23 +32,29 @@ import {
   Lock,
   Globe,
   Calendar,
-
 } from "lucide-react";
 import Header from "@/components/Header";
 
 export default function Collections() {
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [components, setComponents] = useState<Component[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingCollection, setEditingCollection] = useState<Collection | null>(
+    null
+  );
+  const [editForm, setEditForm] = useState({
+    name: "",
+    description: "",
+    isPublic: true,
+  });
   const [newCollection, setNewCollection] = useState({
     name: "",
     description: "",
-    isPublic: true
+    isPublic: true,
   });
 
   useEffect(() => {
@@ -57,7 +70,9 @@ export default function Collections() {
       const response = await collectionsAPI.getAll({ limit: 50 });
       setCollections(response.collections || []);
     } catch (error: any) {
-      toast.error('Failed to load collections: ' + (error.message || 'Unknown error'));
+      toast.error(
+        "Failed to load collections: " + (error.message || "Unknown error")
+      );
     } finally {
       setLoading(false);
     }
@@ -65,58 +80,88 @@ export default function Collections() {
 
   const loadAvailableComponents = async () => {
     try {
-      const response = await componentsAPI.getAll({ limit: 100 });
-      setComponents(response.components || []);
+      await componentsAPI.getAll({ limit: 100 });
     } catch (error: any) {
-      console.error('Failed to load components:', error);
+      console.error("Failed to load components:", error);
     }
   };
 
   const handleCreateCollection = async () => {
     if (!newCollection.name.trim()) {
-      toast.error('Collection name is required');
+      toast.error("Collection name is required");
       return;
     }
 
     try {
       const response = await collectionsAPI.create(newCollection);
-      setCollections(prev => [response.collection, ...prev]);
+      setCollections((prev) => [response.collection, ...prev]);
       setNewCollection({ name: "", description: "", isPublic: true });
       setIsCreateDialogOpen(false);
-      toast.success('Collection created successfully!');
+      toast.success("Collection created successfully!");
     } catch (error: any) {
-      toast.error('Failed to create collection: ' + (error.message || 'Unknown error'));
+      toast.error(
+        "Failed to create collection: " + (error.message || "Unknown error")
+      );
     }
   };
 
   const handleDeleteCollection = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this collection?')) {
+    if (!window.confirm("Are you sure you want to delete this collection?")) {
       return;
     }
 
     try {
       await collectionsAPI.delete(id);
-      setCollections(prev => prev.filter(c => c.id !== id));
-      toast.success('Collection deleted successfully!');
+      setCollections((prev) => prev.filter((c) => c.id !== id));
+      toast.success("Collection deleted successfully!");
     } catch (error: any) {
-      toast.error('Failed to delete collection: ' + (error.message || 'Unknown error'));
+      toast.error(
+        "Failed to delete collection: " + (error.message || "Unknown error")
+      );
     }
   };
 
-  const addComponentToCollection = async (collectionId: string, componentId: string) => {
+  const handleEditCollection = (collection: Collection) => {
+    setEditingCollection(collection);
+    setEditForm({
+      name: collection.name,
+      description: collection.description || "",
+      isPublic: collection.isPublic,
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleUpdateCollection = async () => {
+    if (!editingCollection || !editForm.name.trim()) {
+      toast.error("Collection name is required");
+      return;
+    }
+
     try {
-      await collectionsAPI.addComponent(collectionId, componentId);
-      toast.success('Component added to collection!');
-      // Refresh collections to update counts
-      loadCollections();
+      const response = await collectionsAPI.update(
+        editingCollection.id,
+        editForm
+      );
+      setCollections((prev) =>
+        prev.map((c) =>
+          c.id === editingCollection.id ? response.collection : c
+        )
+      );
+      setEditForm({ name: "", description: "", isPublic: true });
+      setEditingCollection(null);
+      setIsEditDialogOpen(false);
+      toast.success("Collection updated successfully!");
     } catch (error: any) {
-      toast.error('Failed to add component: ' + (error.message || 'Unknown error'));
+      toast.error(
+        "Failed to update collection: " + (error.message || "Unknown error")
+      );
     }
   };
 
-  const filteredCollections = collections.filter(collection =>
-    collection.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    collection.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredCollections = collections.filter(
+    (collection) =>
+      collection.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      collection.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!isAuthenticated) {
@@ -125,7 +170,9 @@ export default function Collections() {
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
             <FolderOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Sign in to manage collections</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              Sign in to manage collections
+            </h3>
             <p className="text-muted-foreground mb-4">
               Create and organize your favorite components into collections
             </p>
@@ -140,7 +187,7 @@ export default function Collections() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 pt-20">
-        <Header />
+      <Header />
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -150,10 +197,15 @@ export default function Collections() {
                 <FolderOpen className="h-8 w-8" />
                 My Collections
               </h1>
-              <p className="text-muted-foreground">Organize your favorite components into collections</p>
+              <p className="text-muted-foreground">
+                Organize your favorite components into collections
+              </p>
             </div>
-            
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+
+            <Dialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+            >
               <DialogTrigger asChild>
                 <Button className="mt-4 md:mt-0">
                   <Plus className="h-4 w-4 mr-2" />
@@ -170,16 +222,28 @@ export default function Collections() {
                     <Input
                       id="collectionName"
                       value={newCollection.name}
-                      onChange={(e) => setNewCollection(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCollection((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       placeholder="My Awesome Collection"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="collectionDescription">Description (optional)</Label>
+                    <Label htmlFor="collectionDescription">
+                      Description (optional)
+                    </Label>
                     <Textarea
                       id="collectionDescription"
                       value={newCollection.description}
-                      onChange={(e) => setNewCollection(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e) =>
+                        setNewCollection((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       placeholder="Describe your collection..."
                       rows={3}
                     />
@@ -187,18 +251,29 @@ export default function Collections() {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Public Collection</Label>
-                      <p className="text-sm text-muted-foreground">Make this collection visible to others</p>
+                      <p className="text-sm text-muted-foreground">
+                        Make this collection visible to others
+                      </p>
                     </div>
                     <Switch
                       checked={newCollection.isPublic}
-                      onCheckedChange={(checked) => setNewCollection(prev => ({ ...prev, isPublic: checked }))}
+                      onCheckedChange={(checked) =>
+                        setNewCollection((prev) => ({
+                          ...prev,
+                          isPublic: checked,
+                        }))
+                      }
                     />
                   </div>
                   <div className="flex gap-2 pt-4">
                     <Button onClick={handleCreateCollection} className="flex-1">
                       Create Collection
                     </Button>
-                    <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="flex-1">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsCreateDialogOpen(false)}
+                      className="flex-1"
+                    >
                       Cancel
                     </Button>
                   </div>
@@ -206,6 +281,71 @@ export default function Collections() {
               </DialogContent>
             </Dialog>
           </div>
+
+          {/* Edit Collection Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Edit Collection</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="editCollectionName">Collection Name</Label>
+                  <Input
+                    id="editCollectionName"
+                    value={editForm.name}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    placeholder="My Awesome Collection"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editCollectionDescription">
+                    Description (optional)
+                  </Label>
+                  <Textarea
+                    id="editCollectionDescription"
+                    value={editForm.description}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        description: e.target.value,
+                      }))
+                    }
+                    placeholder="Describe your collection..."
+                    rows={3}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Public Collection</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Make this collection visible to others
+                    </p>
+                  </div>
+                  <Switch
+                    checked={editForm.isPublic}
+                    onCheckedChange={(checked) =>
+                      setEditForm((prev) => ({ ...prev, isPublic: checked }))
+                    }
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button onClick={handleUpdateCollection} className="flex-1">
+                    Update Collection
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Search and View Controls */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -259,7 +399,10 @@ export default function Collections() {
               {viewMode === "grid" ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredCollections.map((collection) => (
-                    <Card key={collection.id} className="group hover:shadow-lg transition-all duration-300">
+                    <Card
+                      key={collection.id}
+                      className="group hover:shadow-lg transition-all duration-300"
+                    >
                       <CardHeader className="pb-3">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -287,10 +430,12 @@ export default function Collections() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            {new Date(collection.createdAt).toLocaleDateString()}
+                            {new Date(
+                              collection.createdAt
+                            ).toLocaleDateString()}
                           </span>
                         </div>
-                        
+
                         <div className="flex gap-2">
                           <Button asChild size="sm" className="flex-1">
                             <Link to={`/collections/${collection.id}`}>
@@ -298,13 +443,19 @@ export default function Collections() {
                               View
                             </Link>
                           </Button>
-                          <Button variant="outline" size="sm">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditCollection(collection)}
+                          >
                             <Edit3 className="h-3 w-3" />
                           </Button>
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             size="sm"
-                            onClick={() => handleDeleteCollection(collection.id)}
+                            onClick={() =>
+                              handleDeleteCollection(collection.id)
+                            }
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="h-3 w-3" />
@@ -317,7 +468,10 @@ export default function Collections() {
               ) : (
                 <div className="space-y-4">
                   {filteredCollections.map((collection) => (
-                    <Card key={collection.id} className="group hover:shadow-md transition-all duration-300">
+                    <Card
+                      key={collection.id}
+                      className="group hover:shadow-md transition-all duration-300"
+                    >
                       <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4 flex-1">
@@ -351,12 +505,14 @@ export default function Collections() {
                                 </span>
                                 <span className="flex items-center gap-1">
                                   <Calendar className="h-3 w-3" />
-                                  {new Date(collection.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    collection.createdAt
+                                  ).toLocaleDateString()}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          
+
                           <div className="flex gap-2">
                             <Button asChild size="sm">
                               <Link to={`/collections/${collection.id}`}>
@@ -364,13 +520,19 @@ export default function Collections() {
                                 View
                               </Link>
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCollection(collection)}
+                            >
                               <Edit3 className="h-3 w-3" />
                             </Button>
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               size="sm"
-                              onClick={() => handleDeleteCollection(collection.id)}
+                              onClick={() =>
+                                handleDeleteCollection(collection.id)
+                              }
                               className="text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -395,10 +557,9 @@ export default function Collections() {
                 {searchQuery ? "No collections found" : "No collections yet"}
               </h3>
               <p className="text-muted-foreground mb-4">
-                {searchQuery 
+                {searchQuery
                   ? "Try adjusting your search terms"
-                  : "Create your first collection to organize your favorite components"
-                }
+                  : "Create your first collection to organize your favorite components"}
               </p>
               {!searchQuery && (
                 <Button onClick={() => setIsCreateDialogOpen(true)}>

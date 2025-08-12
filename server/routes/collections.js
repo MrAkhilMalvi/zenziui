@@ -27,15 +27,51 @@ router.get("/", optionalAuth, async (req, res) => {
     const limitNum = parseInt(limit);
     const skip = (pageNum - 1) * limitNum;
 
-    const where = {
-      isPublic: true,
-    };
+    let where = {};
+
+    // If user is authenticated, show public collections + their own collections
+    // If not authenticated, show only public collections
+    if (req.user) {
+      where = {
+        OR: [
+          { isPublic: true },
+          { authorId: req.user.id }
+        ]
+      };
+    } else {
+      where = {
+        isPublic: true,
+      };
+    }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ];
+      const searchCondition = {
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { description: { contains: search, mode: "insensitive" } },
+        ]
+      };
+
+      if (req.user) {
+        where = {
+          AND: [
+            {
+              OR: [
+                { isPublic: true },
+                { authorId: req.user.id }
+              ]
+            },
+            searchCondition
+          ]
+        };
+      } else {
+        where = {
+          AND: [
+            { isPublic: true },
+            searchCondition
+          ]
+        };
+      }
     }
 
     const [collections, total] = await Promise.all([
@@ -255,6 +291,217 @@ router.delete("/:id", authenticateToken, async (req, res) => {
     res.status(500).json({
       error: "Internal server error",
       message: "Failed to delete collection",
+    });
+  }
+});
+
+// Update collection
+router.put("/:id", authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const validatedData = updateCollectionSchema.parse(req.body);
+
+    // Check if collection exists
+    const collection = await prisma.collection.findUnique({
+      where: { id },
+    });
+
+    if (!collection) {
+      return res.status(404).json({
+        error: "Collection not found",
+        message: "The requested collection does not exist",
+      });
+    }
+
+    // Check if user owns it or is admin
+    if (collection.authorId !== req.user.id && req.user.role !== "ADMIN") {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You can only update your own collections",
+      });
+    }
+
+    // Update collection
+    const updatedCollection = await prisma.collection.update({
+      where: { id },
+      data: validatedData,
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            avatar: true,
+            isVerified: true,
+          },
+        },
+        _count: {
+          select: {
+            components: true,
+          },
+        },
+      },
+    });
+
+    res.json({
+      collection: updatedCollection,
+      message: "Collection updated successfully",
+    });
+  } catch (error) {
+    if (error.name === "ZodError") {
+      return res.status(400).json({
+        error: "Validation error",
+        message: error.errors[0]?.message || "Invalid input",
+      });
+    }
+
+    console.error("Update collection error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to update collection",
+    });
+  }
+});
+
+// Add component to collection
+router.post("/:id/components", authenticateToken, async (req, res) => {
+  try {
+    const { id: collectionId } = req.params;
+    const { componentId } = req.body;
+
+    if (!componentId) {
+      return res.status(400).json({
+        error: "Validation error",
+        message: "Component ID is required",
+      });
+    }
+
+    // Check if collection exists and user owns it
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) {
+      return res.status(404).json({
+        error: "Collection not found",
+        message: "The requested collection does not exist",
+      });
+    }
+
+    if (collection.authorId !== req.user.id && req.user.role !== "ADMIN") {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You can only modify your own collections",
+      });
+    }
+
+    // Check if component exists
+    const component = await prisma.component.findUnique({
+      where: { id: componentId },
+    });
+
+    if (!component) {
+      return res.status(404).json({
+        error: "Component not found",
+        message: "The requested component does not exist",
+      });
+    }
+
+    // Check if component is already in collection
+    const existingEntry = await prisma.componentCollection.findUnique({
+      where: {
+        collectionId_componentId: {
+          collectionId,
+          componentId,
+        },
+      },
+    });
+
+    if (existingEntry) {
+      return res.status(409).json({
+        error: "Component already in collection",
+        message: "This component is already in the collection",
+      });
+    }
+
+    // Add component to collection
+    await prisma.componentCollection.create({
+      data: {
+        collectionId,
+        componentId,
+      },
+    });
+
+    res.json({
+      message: "Component added to collection successfully",
+    });
+  } catch (error) {
+    console.error("Add component to collection error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to add component to collection",
+    });
+  }
+});
+
+// Remove component from collection
+router.delete("/:id/components/:componentId", authenticateToken, async (req, res) => {
+  try {
+    const { id: collectionId, componentId } = req.params;
+
+    // Check if collection exists and user owns it
+    const collection = await prisma.collection.findUnique({
+      where: { id: collectionId },
+    });
+
+    if (!collection) {
+      return res.status(404).json({
+        error: "Collection not found",
+        message: "The requested collection does not exist",
+      });
+    }
+
+    if (collection.authorId !== req.user.id && req.user.role !== "ADMIN") {
+      return res.status(403).json({
+        error: "Access denied",
+        message: "You can only modify your own collections",
+      });
+    }
+
+    // Check if component is in collection
+    const existingEntry = await prisma.componentCollection.findUnique({
+      where: {
+        collectionId_componentId: {
+          collectionId,
+          componentId,
+        },
+      },
+    });
+
+    if (!existingEntry) {
+      return res.status(404).json({
+        error: "Component not in collection",
+        message: "This component is not in the collection",
+      });
+    }
+
+    // Remove component from collection
+    await prisma.componentCollection.delete({
+      where: {
+        collectionId_componentId: {
+          collectionId,
+          componentId,
+        },
+      },
+    });
+
+    res.json({
+      message: "Component removed from collection successfully",
+    });
+  } catch (error) {
+    console.error("Remove component from collection error:", error);
+    res.status(500).json({
+      error: "Internal server error",
+      message: "Failed to remove component from collection",
     });
   }
 });
