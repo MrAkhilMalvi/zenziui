@@ -176,22 +176,22 @@ export default function Index() {
   const stats = [
     {
       label: "Components",
-      value: "2,500+",
+      value: "50+",
       icon: <Layers className="h-5 w-5" />,
     },
     {
-      label: "Developers",
-      value: "150K+",
+      label: "Templates",
+      value: "25+",
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: "Downloads",
-      value: "1M+",
+      label: "Beta Users",
+      value: "100+",
       icon: <Download className="h-5 w-5" />,
     },
     {
-      label: "GitHub Stars",
-      value: "45K+",
+      label: "In Development",
+      value: "Beta",
       icon: <Star className="h-5 w-5" />,
     },
   ];

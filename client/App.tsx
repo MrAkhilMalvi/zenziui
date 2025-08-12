@@ -2,10 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { AnimatePresence } from "framer-motion";
 import { AuthProvider } from "./hooks/useAuth";
 import Header from "./components/Header";
+import { FloatingShapes, CursorFollow, AnimatedPageWrapper } from "./components/3d";
 import Index from "./pages/Index";
 import Explore from "./pages/Explore";
 import Gallery from "./pages/Gallery";
@@ -13,14 +15,73 @@ import Upload from "./pages/Upload";
 import Docs from "./pages/Docs";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import AuthCallback from "./pages/AuthCallback";
 import NotFound from "./pages/NotFound";
 import "./global.css";
 import Profile from "./pages/Profile";
-import Settings from "./pages/Settings";
-import Collections from "./pages/Collections";
-import AuthCallback from "./pages/AuthCallback";
 
 const queryClient = new QueryClient();
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={
+          <AnimatedPageWrapper>
+            <Index />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/explore" element={
+          <AnimatedPageWrapper>
+            <Explore />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/gallery" element={
+          <AnimatedPageWrapper>
+            <Gallery />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/upload" element={
+          <AnimatedPageWrapper>
+            <Upload />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/docs" element={
+          <AnimatedPageWrapper>
+            <Docs />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/login" element={
+          <AnimatedPageWrapper>
+            <Login />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/signup" element={
+          <AnimatedPageWrapper>
+            <Signup />
+          </AnimatedPageWrapper>
+        } />
+         <Route path="/profile" element={
+          <AnimatedPageWrapper>
+            <Profile />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="/auth/callback" element={
+          <AnimatedPageWrapper>
+            <AuthCallback />
+          </AnimatedPageWrapper>
+        } />
+        <Route path="*" element={
+          <AnimatedPageWrapper>
+            <NotFound />
+          </AnimatedPageWrapper>
+        } />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -30,24 +91,21 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
-            <div className="min-h-screen bg-background">
-              <Header />
-              <main>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/explore" element={<Explore />} />
-                  <Route path="/gallery" element={<Gallery />} />
-                  <Route path="/upload" element={<Upload />} />
-                  <Route path="/docs" element={<Docs />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/signup" element={<Signup />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                  <Route path="/collections" element={<Collections />} />
-                   <Route path="/auth/callback" element={<AuthCallback />} />
-                </Routes>
-              </main>
+            <div className="min-h-screen bg-background relative overflow-hidden">
+              {/* 3D Background Elements */}
+              <FloatingShapes count={8} />
+
+              {/* Custom Cursor */}
+              <CursorFollow />
+
+              {/* Main Content */}
+              <div className="relative z-10">
+                <Header />
+                <main>
+                  <AnimatedRoutes />
+                </main>
+               
+              </div>
             </div>
           </BrowserRouter>
         </TooltipProvider>
