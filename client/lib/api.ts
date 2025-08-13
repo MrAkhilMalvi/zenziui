@@ -1,6 +1,8 @@
 // API Configuration
 const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:3001/api";
+  import.meta.env.MODE === "development"
+    ? "" // empty, will use Vite proxy: /api/...
+    : import.meta.env.VITE_API_URL || "https://backend-zenziui.onrender.com";
 
 // Types
 export interface User {
