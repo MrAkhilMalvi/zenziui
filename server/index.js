@@ -49,6 +49,7 @@ const allowedOrigins = [
   "http://localhost:8080",
   "http://172.19.5.50:8080/",
   "http://192.168.2.33:8080",
+  "https://zenziui-production.vercel.app/",
   "http://192.168.0.69:8080"
 ].filter(Boolean);
 
