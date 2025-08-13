@@ -98,6 +98,26 @@ export interface QueryTypes {
   stats: StatsResponse;
 }
 
+export interface ComponentConfig {
+  padding: [number, number];
+  margin: [number, number];
+  width: string;
+  height: string;
+  backgroundColor: string;
+  textColor: string;
+  fontWeight: string;
+  boxShadow: string;
+  borderWidth: number;
+  borderRadius: number;
+  opacity: number;
+  animation: string;
+  hoverShadow: string;
+  scale: number;
+  rotate: number;
+  position: string;
+  fontSize: number;
+}
+
 export const components: any = [
   {
     id: "button",

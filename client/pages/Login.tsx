@@ -53,13 +53,13 @@ export default function Login() {
   const features = [
     {
       icon: <Code className="h-5 w-5" />,
-      title: "50,000+ Components",
+      title: "50+ Components",
       description: "Access our vast library",
     },
     {
       icon: <Users className="h-5 w-5" />,
       title: "Active Community",
-      description: "Join 150k+ developers",
+      description: "Join 15+ developers",
     },
     {
       icon: <Palette className="h-5 w-5" />,

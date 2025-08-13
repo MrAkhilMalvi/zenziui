@@ -83,7 +83,7 @@ export default function Signup() {
     {
       icon: <Heart className="h-5 w-5" />,
       title: "Community Driven",
-      description: "Join 150k+ developers",
+      description: "Join 15+ developers",
     },
     {
       icon: <Shield className="h-5 w-5" />,
@@ -93,7 +93,7 @@ export default function Signup() {
   ];
 
   const features = [
-    "Access to 50,000+ components",
+    "Access to 50+ components",
     "Visual canvas editor",
     "Real-time code generation",
     "Export to multiple frameworks",
