@@ -56,18 +56,18 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
+      if (!origin) return callback(null, true); // mobile apps or curl
+      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
         return callback(null, true);
       }
       return callback(new Error("CORS not allowed for this origin"), false);
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 
   // Session middleware (required for passport)
   app.use(session({
