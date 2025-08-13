@@ -69,6 +69,7 @@ app.use(
 );
 
 
+
   // Session middleware (required for passport)
   app.use(session({
     secret: process.env.SESSION_SECRET || 'zenziui-session-secret',
