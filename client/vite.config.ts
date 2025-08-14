@@ -1,35 +1,26 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 
 export default defineConfig(({ mode }) => {
-  const isDev = mode === "development";
+  const isDev = mode === 'development';
 
   return {
     server: isDev
       ? {
-          host: "::",
+          host: '::',
           port: 8081,
           proxy: {
-            "/api": {
-              target: "http://localhost:3001", // your local backend
+            '/api': {
+              target: 'http://localhost:3001',
               changeOrigin: true,
               secure: false,
             },
           },
         }
-      : undefined, // no dev server config in production
-
-    build: {
-      outDir: "dist",
-    },
-
+      : undefined,
     plugins: [react()],
-
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "."),
-      },
-    },
+    resolve: { alias: { '@': path.resolve(__dirname, '.') } },
+    build: { outDir: 'dist' },
   };
 });

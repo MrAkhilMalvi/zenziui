@@ -44,26 +44,26 @@ function createServer() {
 
   // CORS configuration
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_DEV,
   "http://localhost:8081",
   "http://localhost:8080",
   "http://172.19.5.50:8080/",
   "http://192.168.2.33:8080",
-  "https://zenziui-production.vercel.app/",
+  // "https://zenziui-production.vercel.app",
   "http://192.168.0.69:8080"
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin) return callback(null, true); // mobile apps or curl
-      if (allowedOrigins.includes(origin) || origin.endsWith(".vercel.app")) {
+      if (!origin) return callback(null, true); // Allow server-to-server or Postman
+      if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
       return callback(new Error("CORS not allowed for this origin"), false);
     },
     credentials: true,
-    methods: ["GET","POST","PUT","DELETE","PATCH","OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
