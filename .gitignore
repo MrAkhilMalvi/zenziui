@@ -15,11 +15,11 @@ dist-ssr
 *.local
 *.env.*
 # Server env
-/server/.env
+server/.env
 
 # Client env files
-/client/.env.production
-/client/.env.development
+client/.env.production
+client/.env.development
 
 # Editor directories and files
 .vscode/*
