@@ -13,7 +13,13 @@ client/node_modules/
 dist
 dist-ssr
 *.local
-*.env
+*.env.*
+# Server env
+/server/.env
+
+# Client env files
+/client/.env.production
+/client/.env.development
 
 # Editor directories and files
 .vscode/*
