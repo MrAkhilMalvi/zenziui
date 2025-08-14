@@ -44,19 +44,19 @@ function createServer() {
 
   // CORS configuration
 const allowedOrigins = [
-  process.env.FRONTEND_URL,
+  process.env.FRONTEND_URL_DEV,
   "http://localhost:8081",
   "http://localhost:8080",
   "http://172.19.5.50:8080/",
   "http://192.168.2.33:8080",
+  // "https://zenziui-production.vercel.app",
   "http://192.168.0.69:8080"
 ].filter(Boolean);
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
+      if (!origin) return callback(null, true); // Allow server-to-server or Postman
       if (allowedOrigins.includes(origin)) {
         return callback(null, true);
       }
@@ -67,6 +67,8 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+
 
   // Session middleware (required for passport)
   app.use(session({

@@ -1,8 +1,11 @@
 // API Configuration
 const API_BASE_URL =
   import.meta.env.MODE === "development"
-    ? "" // empty, will use Vite proxy: /api/...
-    : import.meta.env.VITE_API_URL || "https://backend-zenziui.onrender.com";
+    ? "/api" // ✅ will be proxied to backend in vite.config.ts
+    : import.meta.env.VITE_API_URL || "https://backend-zenziui.onrender.com/api";
+
+
+   
 
 // Types
 export interface User {
@@ -128,12 +131,13 @@ class ApiClient {
 
  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${this.baseURL}${endpoint}`;
-  
+
+  const token = localStorage.getItem("token");
   const isFormData = options.body instanceof FormData;
 
   const headers: HeadersInit = {
-    ...(this.token && { Authorization: `Bearer ${this.token}` }),
-    ...(isFormData ? {} : { "Content-Type": "application/json" }), // only set for JSON
+    ...(token && { Authorization: `Bearer ${token}` }),
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...options.headers,
   };
 

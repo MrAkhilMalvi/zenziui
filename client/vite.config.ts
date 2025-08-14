@@ -1,26 +1,26 @@
-import { defineConfig } from "vite";
-import react from "@vitejs/plugin-react-swc";
-import path from "path";
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+import path from 'path';
 
-// https://vitejs.dev/config/
-export default defineConfig({
-  server: {
-    host: "::",
-    port: 8081,
-    proxy: {
-      "/api": {
-        target: "http://localhost:3001",
-        changeOrigin: true,
-      },
-    },
-  },
-  build: {
-    outDir: "dist",
-  },
-  plugins: [react()],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "."),
-    },
-  },
+export default defineConfig(({ mode }) => {
+  const isDev = mode === 'development';
+
+  return {
+    server: isDev
+      ? {
+          host: '::',
+          port: 8081,
+          proxy: {
+            '/api': {
+              target: 'http://localhost:3001',
+              changeOrigin: true,
+              secure: false,
+            },
+          },
+        }
+      : undefined,
+    plugins: [react()],
+    resolve: { alias: { '@': path.resolve(__dirname, '.') } },
+    build: { outDir: 'dist' },
+  };
 });

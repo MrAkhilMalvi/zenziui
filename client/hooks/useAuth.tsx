@@ -42,11 +42,13 @@ interface AuthProviderProps {
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasFetchedUser, setHasFetchedUser] = useState(false);
 
   const isAuthenticated = !!user;
 
   // Check if user is logged in on mount
   useEffect(() => {
+    if (hasFetchedUser) return;
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -60,6 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         localStorage.removeItem("token");
       } finally {
         setIsLoading(false);
+        setHasFetchedUser(true);
       }
     };
 
@@ -141,8 +144,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Set the token in the API client
       const { apiClient } = await import("@/lib/api");
       apiClient.setToken(token);
-      // Refresh user data
-      await refreshUser();
+
     } catch (error) {
       console.error("Failed to set token:", error);
     }
